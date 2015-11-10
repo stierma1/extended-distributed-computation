@@ -6,8 +6,13 @@ var Request = require("basic-distributed-computation").Request;
 var Bluebird = require("bluebird");
 var spawn = require("child_process").spawn;
 var bodyParser = require("body-parser");
+var fs = require("fs");
 var glob = require("glob");
-
+var winston = require("winston")
+winston.add(winston.transports.File, { filename: 'logs/' + (process.env.LOG_FILE || "app.log") });
+if(process.env.DEBUG === "true"){
+  winston.level = "debug";
+}
 var e = new Env({id:"test", lb:"http://localhost:3031", url:"http://localhost:" + (process.env.NODE_PORT || 3030)});
 
 function downloadStartingPoint(path) {
@@ -67,6 +72,10 @@ app.post("/start", bodyParser.json(), function(req, res){
 app.get("/purge", function(req, res){
   e.emit("purge");
   res.status(200).end();
+});
+
+app.get("/log", function(req, res){
+  fs.createReadStream('logs/' + (process.env.LOG_FILE || "app.log")).pipe(res);
 });
 
 app.listen(process.env.NODE_PORT || 3030);

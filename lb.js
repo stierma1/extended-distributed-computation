@@ -22,11 +22,11 @@ app.get("/start/:id", function(req, res){
   }
 });
 
-app.post("/start", bodyParser.json(), function(req, res){
+app.post("/start", bodyParser.raw({type:"*/*"}), function(req, res){
   var idx = Math.floor((Math.random() * num));
   for(var i in urls){
     if(idx === 0){
-      request.post({url:i + "/start", body:req.body, json:true}, (err, h_req, body) => {
+      request.post({url:i + "/start", body:req.body, headers: req.headers}, (err, h_req, body) => {
         res.json(body);
       });
       return;
