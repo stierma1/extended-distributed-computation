@@ -18,7 +18,7 @@ var e = new Env({id:"test", lb:"http://localhost:3031", url:"http://localhost:" 
 function downloadStartingPoint(path) {
   var defer = Bluebird.defer();
   var proc = spawn("npm", ["install", "edc-start-" + path]);
-
+  winston.log("info", "downloading", {startingPoint:  "edc-start-" + path});
   proc.on("close", (code) => {
     if(code === 0){
       defer.resolve("edc-start-" + path);
@@ -36,10 +36,9 @@ var app = express();
 
 app.get("/start/:id", function(req, res){
   var id = req.params.id;
-
   downloadStartingPoint(id)
     .then(function(path){
-      var req = require(path).createRequest(glob.sync(__dirname + "/**/*.json"));
+      var req = require(path).createRequest({});
       delete require.cache[path];
       var handler = function(err, request){
         if(err){
@@ -48,15 +47,15 @@ app.get("/start/:id", function(req, res){
           res.status(200).send(request[1]);
         }
       }
+
       e.emit("request-start", req, handler);
     })
     .catch((err) => {
-
       res.status(404).send(err);
     });
 });
 
-app.post("/start", bodyParser.json(), function(req, res){
+app.post("/start", bodyParser.json({limit: "100mb"}), function(req, res){
     var req = new Request(JSON.stringify(req.body), e);
 
     var handler = function(err, request){
@@ -68,6 +67,28 @@ app.post("/start", bodyParser.json(), function(req, res){
     }
     e.emit("request-start", req, handler, true);
 });
+
+app.post("/start/:id", bodyParser.json({limit: "100mb"}), function(req, res){
+  var id = req.params.id;
+  downloadStartingPoint(id)
+    .then(function(path){
+      var req = require(path).createRequest(req.body);
+      delete require.cache[path];
+      var handler = function(err, request){
+        if(err){
+          res.status(500).send(err);
+        } else {
+          res.status(200).send(request[1]);
+        }
+      }
+
+      e.emit("request-start", req, handler);
+    })
+    .catch((err) => {
+      res.status(404).send(err);
+    });
+});
+
 
 app.get("/purge", function(req, res){
   e.emit("purge");
