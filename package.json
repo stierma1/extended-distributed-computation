@@ -22,6 +22,7 @@
     "body-parser": "^1.14.1",
     "clone": "^1.0.2",
     "express": "^4.13.3",
+    "mongodb": "^2.0.49",
     "request": "^2.65.0",
     "winston": "^2.0.0"
   }
